@@ -45,3 +45,39 @@ cd your-repo-name
 
 # Clean the build and start the Spring Boot application
 .\mvnw clean spring-boot:run
+
+The application will boot up on http://localhost:8080.
+
+🧪 How to Test the Architecture
+Because this Gateway enforces strict edge security, navigating to localhost:8080 in a standard web browser will result in a 401 Unauthorized error.
+
+To test the system, use an API client like Talend API Tester, Postman, or PowerShell.
+
+Option 1: Testing via API Client (Recommended)
+Open your API Client and set the request type to GET.
+
+Enter the target URL: http://localhost:8080/todos/1
+
+Add the following to the Headers section:
+
+Key: Authorization
+
+Value: Bearer my-secret-token
+
+Click Send.
+
+Option 2: Testing via PowerShell
+PowerShell
+Invoke-WebRequest -Uri "http://localhost:8080/todos/1" -Headers @{"Authorization"="Bearer my-secret-token"}
+
+
+🔍 Expected Behaviors
+By repeating the test request, you can actively observe the distributed system mechanics:
+
+Load Balancing: Press "Send" multiple times. You will see the JSON response completely change structures as the Gateway mathematically alternates your traffic between two distinct backend APIs (jsonplaceholder.typicode.com and dummyjson.com).
+
+Rate Limiting: Press "Send" rapidly (6+ times in under a second). The Gateway will sever the connection and return a 429 Too Many Requests error to protect the backend. Check the response headers to see the live Redis math (X-RateLimit-Remaining).
+
+Edge Security: Remove the Authorization header and send a request. The Gateway will instantly drop the connection with a 401 Unauthorized.
+
+Data Transformation: Check the response headers of any successful request to find X-Superpower: Gateway-Activated, which was secretly injected mid-flight by the Gateway's mutation filters.
