@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: demo
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      
+  # NEW: The Server Registry
+  cloud:
+    discovery:
+      client:
+        simple:
+          instances:
+            my-backend-cluster:
+              - uri: https://jsonplaceholder.typicode.com
+              - uri: https://dummyjson.com
+              
+    gateway:
+      routes:
+        - id: public_test_route
+          uri: lb://my-backend-cluster # NEW: The Load Balancer Protocol
+          predicates:
+            - Path=/todos/**
+          filters:
+            - AddRequestHeader=X-Secret-Agent, 007
+            - AddResponseHeader=X-Superpower, Gateway-Activated
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 2
+                redis-rate-limiter.burstCapacity: 5
+                key-resolver: "#{@userKeyResolver}"
+            - name: CircuitBreaker 
+              args:
+                name: myCircuitBreaker
+                fallbackUri: forward:/fallback
+
+resilience4j:
+  timelimiter:
+    instances:
+      myCircuitBreaker: 
+        timeoutDuration: 4s
